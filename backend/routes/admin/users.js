@@ -32,9 +32,9 @@ router.get('/', adminAuth, async (req, res) => {
     // Query principal
     const usersQuery = `
       SELECT 
-        codigo, id, nome, email, telefone, streamings, espectadores, 
+        codigo, id, nome, email, telefone, streamings, espectadores,
         espectadores_ilimitado, bitrate, bitrate_maximo, espaco, espaco_usado_mb,
-        status, status_detalhado, data_cadastro, data_expiracao, ultimo_acesso_data,
+        status, status_detalhado, data_cadastro, data_expiracao, ultimo_acesso_data, ultimo_acesso_ip,
         total_transmissoes, ultima_transmissao, observacoes_admin,
         (SELECT COUNT(*) FROM transmissoes WHERE codigo_stm = revendas.codigo) as transmissoes_realizadas,
         (SELECT COUNT(*) FROM playlists WHERE codigo_stm = revendas.codigo) as total_playlists,
@@ -63,7 +63,7 @@ router.get('/', adminAuth, async (req, res) => {
         SUM(CASE WHEN status_detalhado = 'ativo' THEN 1 ELSE 0 END) as usuarios_ativos,
         SUM(CASE WHEN status_detalhado = 'suspenso' THEN 1 ELSE 0 END) as usuarios_suspensos,
         SUM(CASE WHEN data_expiracao IS NOT NULL AND data_expiracao < CURDATE() THEN 1 ELSE 0 END) as usuarios_expirados,
-        SUM(espaco_usado_mb) as espaco_total_usado,
+        SUM(COALESCE(espaco_usado_mb, 0)) as espaco_total_usado,
         AVG(espectadores) as media_espectadores
       FROM revendas
     `;
