@@ -15,49 +15,99 @@ const adminAuth = async (req, res, next) => {
       });
     }
 
-    // Verificar token JWT
-    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('🔍 Token recebido:', token.substring(0, 20) + '...');
+
+    // Verificar se é um token de sessão (hexadecimal longo) ou JWT
+    const isSessionToken = /^[a-f0-9]{128}$/.test(token);
     
-    // Verificar se a sessão ainda é válida
-    const sessionQuery = `
-      SELECT s.*, a.codigo, a.nome, a.email, a.nivel_acesso, a.ativo
-      FROM admin_sessions s
-      JOIN administradores a ON s.admin_id = a.codigo
-      WHERE s.token = ? AND s.expires_at > NOW() AND a.ativo = 1
-    `;
-    
-    const sessions = await query(sessionQuery, [token]);
-    
-    if (sessions.length === 0) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Sessão inválida ou expirada' 
-      });
+    if (isSessionToken) {
+      console.log('📝 Verificando token de sessão...');
+      
+      // Verificar se a sessão ainda é válida
+      const sessionQuery = `
+        SELECT s.*, a.codigo, a.nome, a.email, a.nivel_acesso, a.ativo
+        FROM admin_sessions s
+        JOIN administradores a ON s.admin_id = a.codigo
+        WHERE s.token = ? AND s.expires_at > NOW() AND a.ativo = 1
+      `;
+      
+      const sessions = await query(sessionQuery, [token]);
+      
+      if (sessions.length === 0) {
+        console.log('❌ Sessão inválida ou expirada');
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Sessão inválida ou expirada' 
+        });
+      }
+
+      const session = sessions[0];
+      console.log('✅ Sessão válida para admin:', session.nome);
+      
+      // Atualizar última atividade
+      await query(
+        'UPDATE admin_sessions SET last_activity = NOW() WHERE token = ?',
+        [token]
+      );
+
+      // Adicionar dados do admin à requisição
+      req.admin = {
+        id: session.codigo,
+        nome: session.nome,
+        email: session.email,
+        nivel_acesso: session.nivel_acesso,
+        session_id: session.id
+      };
+
+      next();
+    } else {
+      console.log('🔑 Verificando token JWT...');
+      
+      try {
+        // Verificar token JWT
+        const decoded = jwt.verify(token, JWT_SECRET);
+        console.log('✅ JWT válido:', decoded);
+        
+        // Buscar admin no banco
+        const adminQuery = `
+          SELECT codigo, nome, email, nivel_acesso, ativo
+          FROM administradores
+          WHERE codigo = ? AND ativo = 1
+        `;
+        
+        const admins = await query(adminQuery, [decoded.adminId || decoded.userId]);
+        
+        if (admins.length === 0) {
+          return res.status(401).json({ 
+            success: false, 
+            error: 'Administrador não encontrado ou inativo' 
+          });
+        }
+
+        const admin = admins[0];
+        
+        // Adicionar dados do admin à requisição
+        req.admin = {
+          id: admin.codigo,
+          nome: admin.nome,
+          email: admin.email,
+          nivel_acesso: admin.nivel_acesso
+        };
+
+        next();
+      } catch (jwtError) {
+        console.log('❌ JWT inválido:', jwtError.message);
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Token inválido' 
+        });
+      }
     }
-
-    const session = sessions[0];
-    
-    // Atualizar última atividade
-    await query(
-      'UPDATE admin_sessions SET last_activity = NOW() WHERE token = ?',
-      [token]
-    );
-
-    // Adicionar dados do admin à requisição
-    req.admin = {
-      id: session.codigo,
-      nome: session.nome,
-      email: session.email,
-      nivel_acesso: session.nivel_acesso,
-      session_id: session.id
-    };
-
-    next();
   } catch (error) {
     console.error('Admin auth error:', error);
     return res.status(401).json({ 
       success: false, 
-      error: 'Token inválido' 
+      error: 'Erro de autenticação' 
     });
   }
 };

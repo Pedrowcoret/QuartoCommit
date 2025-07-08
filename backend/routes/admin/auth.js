@@ -82,6 +82,8 @@ router.post('/login', async (req, res) => {
     const sessionToken = crypto.randomBytes(64).toString('hex');
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 horas
 
+    console.log('🎫 Gerando token de sessão:', sessionToken.substring(0, 20) + '...');
+
     // Criar sessão
     await query(
       `
@@ -120,6 +122,56 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Admin login error:', error);
     console.error('Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Logout administrativo
+router.post('/logout', adminAuth, async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (token) {
+      // Remover sessão do banco
+      await query(
+        'DELETE FROM admin_sessions WHERE token = ?',
+        [token]
+      );
+    }
+
+    // Log da ação
+    await logAdminAction(req.admin.id, 'logout', null, null, null, { ip: req.ip }, req);
+
+    res.json({
+      success: true,
+      message: 'Logout realizado com sucesso'
+    });
+  } catch (error) {
+    console.error('Admin logout error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Verificar sessão atual
+router.get('/me', adminAuth, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      admin: {
+        id: req.admin.id,
+        nome: req.admin.nome,
+        email: req.admin.email,
+        nivel_acesso: req.admin.nivel_acesso
+      }
+    });
+  } catch (error) {
+    console.error('Admin me error:', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
