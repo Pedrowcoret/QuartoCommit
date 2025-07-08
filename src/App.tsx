@@ -2,10 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Admin Pages
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+
 // Auth Pages
 import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
-import Register from './pages/auth/Register';
 import ConfirmEmail from './pages/auth/ConfirmEmail';
 import ResetPassword from './pages/auth/ResetPassword';
 import AuthCallback from './pages/auth/AuthCallback';
@@ -46,12 +49,16 @@ function App() {
       <AuthProvider>
         <StreamProvider>
           <Routes>
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/*" element={<Navigate to="/admin/dashboard" />} />
+
             {/* Auth Routes */}
             <Route path="/" element={<AuthLayout />}>
               <Route index element={<RedirectToProperPlace />} />
               <Route path="login" element={<Login />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
-              <Route path="register" element={<Register />} />
               <Route path="confirm" element={<ConfirmEmail />} />
               <Route path="reset-password" element={<ResetPassword />} />
               <Route path="auth/callback" element={<AuthCallback />} />

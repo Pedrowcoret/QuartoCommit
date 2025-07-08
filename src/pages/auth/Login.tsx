@@ -136,9 +136,9 @@ const Login: React.FC = () => {
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Não tem acesso?{' '}
-          <Link to="/register" className="text-primary-600 hover:text-primary-800 font-medium">
-            Novo cadastro
+          Acesso restrito a usuários autorizados.{' '}
+          <Link to="/admin/login" className="text-primary-600 hover:text-primary-800 font-medium">
+            Painel Administrativo
           </Link>
         </p>
       </div>
