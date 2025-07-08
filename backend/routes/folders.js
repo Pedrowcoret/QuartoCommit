@@ -11,11 +11,11 @@ router.get('/', authMiddleware, async (req, res) => {
 
     // Buscar pastas do usuário na tabela streamings
     const [rows] = await db.execute(
-      `SELECT DISTINCT 
-        SUBSTRING_INDEX(SUBSTRING_INDEX(ftp_dir, '/', -1), '/', 1) as nome,
-        ROW_NUMBER() OVER (ORDER BY ftp_dir) as id
+      `SELECT 
+        codigo as id,
+        identificacao as nome
        FROM streamings 
-       WHERE codigo_cliente = ? AND ftp_dir != ''`,
+       WHERE codigo_cliente = ? AND status = 1`,
       [userId]
     );
 

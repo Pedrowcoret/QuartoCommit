@@ -24,8 +24,8 @@ router.get('/', authMiddleware, async (req, res) => {
         CONCAT(pa.data, ' ', LPAD(pa.hora, 2, '0'), ':', LPAD(pa.minuto, 2, '0'), ':00') as inicio,
         pa.dias as dias_semana
       FROM playlists_agendamentos pa
-      LEFT JOIN playlists p ON pa.codigo_playlist = p.codigo
-      LEFT JOIN playlists pf ON pa.codigo_playlist_finalizacao = pf.codigo
+      LEFT JOIN playlists p ON pa.codigo_playlist = p.id
+      LEFT JOIN playlists pf ON pa.codigo_playlist_finalizacao = pf.id
       WHERE pa.codigo_stm = ?
     `;
 
@@ -95,8 +95,8 @@ router.post('/', authMiddleware, async (req, res) => {
     const [result] = await db.execute(
       `INSERT INTO playlists_agendamentos (
         codigo_stm, codigo_playlist, frequencia, data, hora, minuto,
-        dias, shuffle, finalizacao, codigo_playlist_finalizacao
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        dias, shuffle, finalizacao, codigo_playlist_finalizacao, servidor_relay
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '')`,
       [
         userId,
         id_playlist,

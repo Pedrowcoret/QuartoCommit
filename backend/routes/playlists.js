@@ -10,7 +10,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     const [rows] = await db.execute(
-      'SELECT id as id, nome FROM playlists WHERE codigo_stm = ? ORDER BY id',
+      'SELECT id, nome, total_videos, duracao_total FROM playlists WHERE codigo_stm = ? ORDER BY id',
       [userId]
     );
 
@@ -35,7 +35,7 @@ router.post('/', authMiddleware, async (req, res) => {
     );
 
     const [newPlaylist] = await db.execute(
-      'SELECT id as id, nome FROM playlists WHERE id = ?',
+      'SELECT id, nome FROM playlists WHERE id = ?',
       [result.insertId]
     );
 
@@ -64,7 +64,7 @@ router.get('/:id/videos', authMiddleware, async (req, res) => {
 
     const [rows] = await db.execute(
       `SELECT 
-        pv.id as id,
+        pv.codigo as id,
         pv.ordem,
         pv.video as nome,
         pv.path_video as url,
@@ -123,7 +123,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     // Atualizar vídeos se fornecidos
     if (videos && Array.isArray(videos)) {
-      // Remover vídeos existentes
+      // Remover vídeos existentes da playlist
       await db.execute(
         'DELETE FROM playlists_videos WHERE codigo_playlist = ?',
         [playlistId]
@@ -132,11 +132,50 @@ router.put('/:id', authMiddleware, async (req, res) => {
       // Inserir novos vídeos
       for (let i = 0; i < videos.length; i++) {
         const video = videos[i];
+        
+        // Buscar dados do vídeo original
+        const [videoData] = await db.execute(
+          'SELECT * FROM playlists_videos WHERE codigo = ?',
+          [video.id]
+        );
+
+        if (videoData.length > 0) {
+          const originalVideo = videoData[0];
+          await db.execute(
+            `INSERT INTO playlists_videos (
+              codigo_playlist, path_video, video, width, height,
+              bitrate, duracao, duracao_segundos, tipo, ordem
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              playlistId,
+              originalVideo.path_video,
+              originalVideo.video,
+              originalVideo.width,
+              originalVideo.height,
+              originalVideo.bitrate,
+              originalVideo.duracao,
+              originalVideo.duracao_segundos,
+              originalVideo.tipo,
+              i
+            ]
+          );
+        }
+      }
+
+      // Atualizar estatísticas da playlist
+      const [stats] = await db.execute(
+        `SELECT 
+          COUNT(*) as total_videos,
+          SUM(duracao_segundos) as duracao_total
+         FROM playlists_videos 
+         WHERE codigo_playlist = ?`,
+        [playlistId]
+      );
+
+      if (stats.length > 0) {
         await db.execute(
-          `UPDATE playlists_videos SET 
-           codigo_playlist = ?, ordem = ? 
-           WHERE id = ?`,
-          [playlistId, i, video.id]
+          'UPDATE playlists SET total_videos = ?, duracao_total = ? WHERE id = ?',
+          [stats[0].total_videos, stats[0].duracao_total || 0, playlistId]
         );
       }
     }
@@ -166,7 +205,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     // Verificar se playlist está sendo usada em agendamentos
     const [agendamentoRows] = await db.execute(
-      'SELECT id FROM playlists_agendamentos WHERE codigo_playlist = ?',
+      'SELECT codigo FROM playlists_agendamentos WHERE codigo_playlist = ?',
       [playlistId]
     );
 

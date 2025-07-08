@@ -84,7 +84,7 @@ router.get('/', authMiddleware, async (req, res) => {
     // Ajustar URLs para serem acessíveis via HTTP
     const videos = rows.map(video => ({
       ...video,
-      url: video.url ? `/content/${userEmail}/${folderId}/${path.basename(video.url)}` : null
+      url: video.url ? `/content${video.url}` : null
     }));
 
     res.json(videos);
@@ -129,7 +129,7 @@ router.post('/upload', authMiddleware, upload.single('video'), async (req, res) 
     res.status(201).json({
       id: result.insertId,
       nome: req.file.originalname,
-      url: `/content/${userEmail}/${folderId}/${req.file.filename}`,
+      url: `/content${relativePath}`,
       duracao: duracao,
       tamanho: tamanho
     });
