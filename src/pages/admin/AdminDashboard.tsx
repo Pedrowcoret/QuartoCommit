@@ -245,7 +245,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-500">Total de Usuários</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.usuarios.total_usuarios}</p>
                 <p className="text-xs text-green-600">
-                  +{stats.usuarios.novos_usuarios_semana} esta semana
+                  +{stats.usuarios.novos_usuarios_semana || 0} esta semana
                 </p>
               </div>
             </div>
@@ -261,7 +261,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-500">Usuários Ativos</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.usuarios.usuarios_ativos}</p>
                 <p className="text-xs text-gray-500">
-                  {((stats.usuarios.usuarios_ativos / stats.usuarios.total_usuarios) * 100).toFixed(1)}% do total
+                  {stats.usuarios.total_usuarios > 0 ? ((stats.usuarios.usuarios_ativos / stats.usuarios.total_usuarios) * 100).toFixed(1) : 0}% do total
                 </p>
               </div>
             </div>
@@ -277,7 +277,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-500">Transmissões Ativas</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.transmissoes.transmissoes_ativas}</p>
                 <p className="text-xs text-gray-500">
-                  {stats.transmissoes.transmissoes_semana} esta semana
+                  {stats.transmissoes.transmissoes_semana || 0} esta semana
                 </p>
               </div>
             </div>
@@ -293,7 +293,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-500">Uso de Espaço</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.resumo.utilizacao_espaco}%</p>
                 <p className="text-xs text-gray-500">
-                  {formatBytes(stats.recursos.espaco_total_usado * 1024 * 1024)} usado
+                  {formatBytes((stats.recursos.espaco_total_usado || 0) * 1024 * 1024)} usado
                 </p>
               </div>
             </div>
@@ -311,17 +311,17 @@ const AdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {stats.crescimento_mensal.slice(-6).map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{item.mes}</span>
+                  <span className="text-sm text-gray-600">{item.mes || 'N/A'}</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-green-600 h-2 rounded-full"
                         style={{ 
-                          width: `${Math.min((item.novos_usuarios / Math.max(...stats.crescimento_mensal.map(m => m.novos_usuarios))) * 100, 100)}%` 
+                          width: `${Math.min(((item.novos_usuarios || 0) / Math.max(...stats.crescimento_mensal.map(m => m.novos_usuarios || 0), 1)) * 100, 100)}%` 
                         }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{item.novos_usuarios}</span>
+                    <span className="text-sm font-medium text-gray-900">{item.novos_usuarios || 0}</span>
                   </div>
                 </div>
               ))}
@@ -337,17 +337,17 @@ const AdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {stats.plataformas.slice(0, 5).map((plataforma, index) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 capitalize">{plataforma.plataforma_nome}</span>
+                  <span className="text-sm text-gray-600 capitalize">{plataforma.plataforma_nome || 'N/A'}</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{ 
-                          width: `${Math.min((plataforma.usuarios_configurados / Math.max(...stats.plataformas.map(p => p.usuarios_configurados))) * 100, 100)}%` 
+                          width: `${Math.min(((plataforma.usuarios_configurados || 0) / Math.max(...stats.plataformas.map(p => p.usuarios_configurados || 0), 1)) * 100, 100)}%` 
                         }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{plataforma.usuarios_configurados}</span>
+                    <span className="text-sm font-medium text-gray-900">{plataforma.usuarios_configurados || 0}</span>
                   </div>
                 </div>
               ))}
@@ -394,21 +394,21 @@ const AdminDashboard: React.FC = () => {
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{usuario.nome}</div>
-                        <div className="text-sm text-gray-500">{usuario.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{usuario.nome || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{usuario.email || 'N/A'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {usuario.total_transmissoes}
+                      {usuario.total_transmissoes || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {Math.round(usuario.media_viewers)}
+                      {Math.round(usuario.media_viewers || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDuration(usuario.tempo_total)}
+                      {formatDuration(usuario.tempo_total || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(usuario.ultima_transmissao).toLocaleDateString()}
+                      {usuario.ultima_transmissao ? new Date(usuario.ultima_transmissao).toLocaleDateString() : 'Nunca'}
                     </td>
                   </tr>
                 ))}

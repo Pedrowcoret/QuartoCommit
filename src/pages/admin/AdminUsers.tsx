@@ -206,7 +206,7 @@ const AdminUsers: React.FC = () => {
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -225,6 +225,8 @@ const AdminUsers: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
+    if (!status) status = 'ativo';
+    
     const statusConfig = {
       ativo: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
       suspenso: { color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle },
@@ -238,7 +240,7 @@ const AdminUsers: React.FC = () => {
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
         <Icon className="h-3 w-3 mr-1" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Ativo'}
       </span>
     );
   };
@@ -472,7 +474,7 @@ const AdminUsers: React.FC = () => {
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{user.nome}</div>
                             <div className="text-sm text-gray-500">{user.email}</div>
-                            <div className="text-xs text-gray-400">ID: {user.id}</div>
+                            <div className="text-xs text-gray-400">ID: {user.id || 'N/A'}</div>
                           </div>
                         </div>
                       </td>
@@ -488,7 +490,7 @@ const AdminUsers: React.FC = () => {
                         <div className="space-y-1">
                           <div className="flex items-center text-sm">
                             <Zap className="h-3 w-3 text-blue-500 mr-1" />
-                            <span>{user.bitrate} kbps</span>
+                            <span>{user.bitrate || 0} kbps</span>
                             {user.bitrate_maximo && (
                               <span className="text-gray-400 ml-1">(max: {user.bitrate_maximo})</span>
                             )}
@@ -496,12 +498,12 @@ const AdminUsers: React.FC = () => {
                           <div className="flex items-center text-sm">
                             <Eye className="h-3 w-3 text-green-500 mr-1" />
                             <span>
-                              {user.espectadores_ilimitado ? 'Ilimitado' : user.espectadores} espectadores
+                              {user.espectadores_ilimitado ? 'Ilimitado' : (user.espectadores || 0)} espectadores
                             </span>
                           </div>
                           <div className="flex items-center text-sm">
                             <HardDrive className="h-3 w-3 text-purple-500 mr-1" />
-                            <span>{formatBytes(user.espaco_usado_mb * 1024 * 1024)} / {user.espaco}GB</span>
+                            <span>{formatBytes((user.espaco_usado_mb || 0) * 1024 * 1024)} / {user.espaco || 0}GB</span>
                           </div>
                         </div>
                       </td>
@@ -519,11 +521,11 @@ const AdminUsers: React.FC = () => {
                         <div className="space-y-1">
                           <div className="flex items-center text-sm">
                             <Activity className="h-3 w-3 text-red-500 mr-1" />
-                            <span>{user.transmissoes_realizadas} transmissões</span>
+                            <span>{user.transmissoes_realizadas || 0} transmissões</span>
                           </div>
                           <div className="flex items-center text-sm">
                             <Globe className="h-3 w-3 text-blue-500 mr-1" />
-                            <span>{user.plataformas_configuradas} plataformas</span>
+                            <span>{user.plataformas_configuradas || 0} plataformas</span>
                           </div>
                           {user.ultima_transmissao && (
                             <div className="text-xs text-gray-500">
@@ -571,7 +573,7 @@ const AdminUsers: React.FC = () => {
                                   >
                                     <CheckCircle className="h-4 w-4 inline mr-2" />
                                     Ativar
-                                  </button>
+                                  {user.nome ? user.nome.charAt(0).toUpperCase() : '?'}
                                 )}
                               </div>
                             </div>
